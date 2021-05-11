@@ -73,7 +73,7 @@ class PointCloud(ABC):
         :return: (all_pc, all_times). The aggregated point cloud and timestamps.
         """
         # Init.
-        points = np.zeros((cls.nbr_dims(), 0))
+        points = np.zeros((cls.nbr_dims(), 0), dtype=np.float32 if cls == LidarPointCloud else np.float64)
         all_pc = cls(points)
         all_times = np.zeros((1, 0))
 

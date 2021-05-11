@@ -36,6 +36,13 @@ Users that submit their results during the challenge period are eligible for awa
 
 Click [here](https://eval.ai/web/challenges/challenge-page/591/overview) for the **EvalAI prediction evaluation server**.
 
+### 6th AI Driving Olympics, ICRA 2021
+The second nuScenes prediction challenge will be held at [ICRA 2021](http://www.icra2021.org/) as part of [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
+Submissions will be accepted from April 1 to May 26, 2021.
+The prizes will be awarded to submissions that outperform the previous state-of-the-art in their respective tracks.
+Results and winners will be announced at [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
+Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/591/overview) as previous prediction challenges.
+
 ### Workshop on Benchmarking Progress in Autonomous Driving, ICRA 2020
 The first nuScenes prediction challenge will be held at [ICRA 2020](https://www.icra2020.org/).
 This challenge will be focused on predicting trajectories for vehicles. The submission period will open April 1 and continue until May 28th, 2020.
@@ -67,7 +74,7 @@ from the training set called the `train_val` set.
 * We release sensor data for train, val and test set.
 * Top leaderboard entries and their papers will be manually reviewed to ensure no cheating was done.
 * Each user or team can have at most one account *per year* on the evaluation server. Users that create multiple accounts to circumvent the rules will be excluded from the competition.
-* Each user or team can submit at most three results *per year*. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
+* Each user or team can submit at most three results *per month*. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
 * Faulty submissions that return an error on Eval AI do not count towards the submission limit.
 * Any attempt to make more submissions than allowed will result in a permanent ban of the team or company from all nuScenes challenges.
 
