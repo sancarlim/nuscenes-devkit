@@ -228,11 +228,11 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
         self.maps = load_all_maps(helper)
 
         if not layer_names:
-            layer_names = ['drivable_area', 'ped_crossing', 'walkway']
+            layer_names = ['drivable_area', 'ped_crossing', 'walkway', 'stop_line'] #lane_divider road_divider
         self.layer_names = layer_names
 
         if not colors:
-            colors = [(255, 255, 255), (119, 136, 153), (0, 0, 255)]
+            colors = [(255, 255, 255), (119, 136, 153), (0, 0, 255), (189, 133, 109)]
         self.colors = colors
 
         self.resolution = resolution
@@ -242,20 +242,24 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
         self.meters_right = meters_right
         self.combinator = Rasterizer()
 
-    def make_representation(self, instance_token: str, sample_token: str) -> np.ndarray:
+    def make_representation(self, instance_token: str, sample_token: str, poserecord: Dict[str, Any], ego: bool) -> np.ndarray:
         """
         Makes rasterized representation of static map layers.
         :param instance_token: Token for instance.
         :param sample_token: Token for sample.
         :return: Three channel image.
         """
-
-        sample_annotation = self.helper.get_sample_annotation(instance_token, sample_token)
         map_name = self.helper.get_map_name_from_sample_token(sample_token)
 
+        if ego:
+            sample_annotation = poserecord['translation'][:2]
+        else:
+            sample_annotation = self.helper.get_sample_annotation(instance_token, sample_token)
+    
         x, y = sample_annotation['translation'][:2]
 
         yaw = quaternion_yaw(Quaternion(sample_annotation['rotation']))
+
 
         yaw_corrected = correct_yaw(yaw)
 

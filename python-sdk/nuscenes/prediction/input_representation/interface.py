@@ -1,7 +1,7 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton 2020.
 import abc
-from typing import List
+from typing import Any, Dict, List, Tuple, Callable
 
 import numpy as np
 
@@ -45,10 +45,10 @@ class InputRepresentation:
         self.agent_rasterizer = agent
         self.combinator = combinator
 
-    def make_input_representation(self, instance_token: str, sample_token: str) -> np.ndarray:
+    def make_input_representation(self, instance_token: str, sample_token: str,  poserecord: Dict[str, Any]) -> np.ndarray:
 
-        static_layers = self.static_layer_rasterizer.make_representation(instance_token, sample_token)
-        agents = self.agent_rasterizer.make_representation(instance_token, sample_token)
+        static_layers = self.static_layer_rasterizer.make_representation(instance_token, sample_token, poserecord, ego)
+        agents = self.agent_rasterizer.make_representation(instance_token, sample_token, poserecord, ego)
 
         return self.combinator.combine([static_layers, agents])
 
