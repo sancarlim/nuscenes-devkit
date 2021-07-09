@@ -13,6 +13,10 @@ class StaticLayerRepresentation(abc.ABC):
     def make_representation(self, instance_token: str, sample_token: str) -> np.ndarray:
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def get_lanes_per_agent(self, instance_token: str, sample_token: str) -> np.ndarray:
+        raise NotImplementedError()
+
 
 class AgentRepresentation(abc.ABC):
     """ Represents information of agents in scene as numpy array. """
@@ -45,10 +49,13 @@ class InputRepresentation:
         self.agent_rasterizer = agent
         self.combinator = combinator
 
-    def make_input_representation(self, instance_token: str, sample_token: str,  poserecord: Dict[str, Any]) -> np.ndarray:
+    def make_input_representation(self, instance_token: str, sample_token: str,  poserecord: Dict[str, Any], ego: bool) -> np.ndarray:
 
         static_layers = self.static_layer_rasterizer.make_representation(instance_token, sample_token, poserecord, ego)
         agents = self.agent_rasterizer.make_representation(instance_token, sample_token, poserecord, ego)
 
         return self.combinator.combine([static_layers, agents])
 
+    def get_lanes_representation(self, instance_token: str, sample_token: str,  poserecord: Dict[str, Any], ego: bool) ->  Dict[str, List[Tuple[float, float, float]]]:
+
+        return self.static_layer_rasterizer.get_lanes_per_agent(instance_token, sample_token, poserecord, ego)

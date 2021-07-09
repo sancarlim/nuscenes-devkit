@@ -2,12 +2,14 @@
 # Code written by Sergi Adipraja Widjaja, 2019.
 # + Map mask by Kiwoo Shin, 2019.
 # + Methods operating on NuScenesMap and NuScenes by Holger Caesar, 2019.
+# + Working with torch by Sandra Carrasco, 2021
 
+import torch
 import json
 import os
 import random
 from typing import Dict, List, Tuple, Optional, Union
-
+import math
 import cv2
 import descartes
 import matplotlib.gridspec as gridspec
@@ -509,7 +511,7 @@ class NuScenesMap:
         pose_lists = []
         for lane in self.lane + self.lane_connector:
             my_lane = self.arcline_path_3.get(lane['token'], [])
-            discretized = np.array(discretize_lane(my_lane, resolution_meters))
+            discretized = torch.as_tensor(discretize_lane(my_lane, resolution_meters))
             pose_lists.append(discretized)
 
         return pose_lists
@@ -568,7 +570,9 @@ class NuScenesMap:
 
         arcline_path = self.arcline_path_3.get(lane_token)
         if not arcline_path:
-            raise ValueError(f'Error: Lane with token {lane_token} does not have a valid arcline path!')
+            print(f'Error: Lane with token {lane_token} does not have a valid arcline path!')
+            return -1
+            #raise ValueError(f'Error: Lane with token {lane_token} does not have a valid arcline path!')
 
         return arcline_path
 
@@ -587,7 +591,7 @@ class NuScenesMap:
 
         discrete_points = self.discretize_lanes(lanes, 0.5)
 
-        current_min = np.inf
+        current_min = torch.as_tensor(math.inf)
 
         min_id = ""
         for lane_id, points in discrete_points.items():

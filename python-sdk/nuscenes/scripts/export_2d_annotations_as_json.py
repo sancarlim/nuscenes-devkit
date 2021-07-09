@@ -183,19 +183,20 @@ def main(args):
         reprojections.extend(reprojection_records)
 
     # Save to a .json file.
-    dest_path = os.path.join(args.dataroot, args.version)
+    path = '/home/sandra/PROGRAMAS/DBU_Graph/NuScenes/'
+    dest_path = os.path.join(path, args.version)
     if not os.path.exists(dest_path):
         os.makedirs(dest_path)
-    with open(os.path.join(args.dataroot, args.version, args.filename), 'w') as fh:
+    with open(os.path.join(path, args.version, args.filename), 'w') as fh:
         json.dump(reprojections, fh, sort_keys=True, indent=4)
 
-    print("Saved the 2D re-projections under {}".format(os.path.join(args.dataroot, args.version, args.filename)))
+    print("Saved the 2D re-projections under {}".format(os.path.join(path, args.version, args.filename)))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Export 2D annotations from reprojections to a .json file.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes', help="Path where nuScenes is saved.")
+    parser.add_argument('--dataroot', type=str, default='/media/14TBDISK/nuscenes', help="Path where nuScenes is saved.")
     parser.add_argument('--version', type=str, default='v1.0-trainval', help='Dataset version.')
     parser.add_argument('--filename', type=str, default='image_annotations.json', help='Output filename.')
     parser.add_argument('--visibilities', type=str, default=['', '1', '2', '3', '4'],

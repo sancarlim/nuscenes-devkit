@@ -59,9 +59,9 @@ def main(version: str, data_root: str, submission_path: str,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Perform Inference with baseline models.')
-    parser.add_argument('--version', help='nuScenes version number.')
-    parser.add_argument('--data_root', help='Directory storing NuScenes data.', default='/data/sets/nuscenes')
-    parser.add_argument('--submission_path', help='Path storing the submission file.')
+    parser.add_argument('--version', help='nuScenes version number.', default='v1.0-trainval')
+    parser.add_argument('--data_root', help='Directory storing NuScenes data.', default='/media/14TBDISK/nuscenes/')
+    parser.add_argument('--submission_path', help='Path storing the submission file.', default='/home/sandra/PROGRAMAS/DBU_Graph/NuScenes/challenge_inference.json')
     parser.add_argument('--config_name', help='Config file to use.', default='predict_2020_icra.json')
     args = parser.parse_args()
     main(args.version, args.data_root, args.submission_path, args.config_name)

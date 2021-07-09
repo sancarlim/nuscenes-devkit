@@ -2,7 +2,7 @@
 # Code written by Freddy Boulton, 2020.
 import colorsys
 import os
-from typing import Dict, List, Tuple, Callable
+from typing import Dict, List, Tuple, Callable, Any
 
 import cv2
 import numpy as np
@@ -99,7 +99,7 @@ def get_lanes_in_radius(x: float, y: float, radius: float,
     :param map_api: The NuScenesMap instance to query.
     :return: Mapping from lane id to list of coordinate tuples in global coordinate system.
     """
-
+    
     lanes = map_api.get_records_in_radius(x, y, radius, ['lane', 'lane_connector'])
     lanes = lanes['lane'] + lanes['lane_connector']
     lanes = map_api.discretize_lanes(lanes, discretization_meters)
@@ -207,7 +207,7 @@ def draw_lanes_in_agent_frame(image_side_length: int,
 
     rotated_image = cv2.warpAffine(image_with_lanes, rotation_mat, image_with_lanes.shape[:2])
 
-    return rotated_image.astype("uint8")
+    return rotated_image.astype("uint8"), lanes
 
 
 class StaticLayerRasterizer(StaticLayerRepresentation):
@@ -252,7 +252,7 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
         map_name = self.helper.get_map_name_from_sample_token(sample_token)
 
         if ego:
-            sample_annotation = poserecord['translation'][:2]
+            sample_annotation = poserecord
         else:
             sample_annotation = self.helper.get_sample_annotation(instance_token, sample_token)
     
@@ -279,11 +279,11 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
         for mask, color in zip(masks, self.colors):
             images.append(change_color_of_binary_mask(np.repeat(mask[::-1, :, np.newaxis], 3, 2), color))
 
-        lanes = draw_lanes_in_agent_frame(image_side_length_pixels, x, y, yaw, radius=50,
+        img_lanes = draw_lanes_in_agent_frame(image_side_length_pixels, x, y, yaw, radius=50,
                                           image_resolution=self.resolution, discretization_resolution_meters=1,
                                           map_api=self.maps[map_name])
 
-        images.append(lanes)
+        images.append(img_lanes)
 
         image = self.combinator.combine(images)
 
@@ -292,3 +292,39 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
                                        int(image_side_length / self.resolution))
 
         return image[row_crop, col_crop, :]
+
+
+    def get_lanes_per_agent(self, instance_token: str, sample_token: str, poserecord: Dict[str, Any], ego: bool) ->  Dict[str, List[Tuple[float, float, float]]]:
+        """
+        Get lanes in a radius of 50m around agent in global frame.
+        :param instance_token: Token for instance.
+        :param sample_token: Token for sample.
+        :return: Mapping from lane id to list of coordinate tuples in global coordinate system. .
+        """
+        map_name = self.helper.get_map_name_from_sample_token(sample_token)
+
+        if ego:
+            sample_annotation = poserecord
+        else:
+            sample_annotation = self.helper.get_sample_annotation(instance_token, sample_token)
+    
+        x, y = sample_annotation['translation'][:2]
+        
+        #yaw = quaternion_yaw(Quaternion(sample_annotation['rotation']))
+
+        #yaw_corrected = correct_yaw(yaw)
+
+        #image_side_length = 2 * max(self.meters_ahead, self.meters_behind,
+        #                            self.meters_left, self.meters_right)
+
+        #patchbox = get_patchbox(x, y, image_side_length) 
+        #angle_in_degrees = angle_of_rotation(yaw_corrected) * 180 / np.pi
+
+        #patch = map_api.explorer.get_patch_coord(patchbox, angle_in_degrees)
+        #lanes = map_api.explorer.get_records_in_patch(patch.bounds, ['lane', 'lane_connector'])
+        
+        #lanes = lanes['lane'] + lanes['lane_connector']
+        #lanes = map_api.discretize_lanes(lanes, resolution_meters=1)
+        lanes = get_lanes_in_radius(x, y, radius=50, discretization_meters=1, map_api=self.maps[map_name])
+
+        return lanes

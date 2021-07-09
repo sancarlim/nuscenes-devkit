@@ -318,7 +318,7 @@ def main(version: str,
     print('\t* Minimum visibility: {}'.format(visibility))
 
     # ================================ Load image annotations. ========================================
-    image_annotations_file = os.path.join(dataroot, version, 'image_annotations.json')
+    image_annotations_file = os.path.join(output, version, 'image_annotations.json')
     if not os.path.exists(image_annotations_file):
         raise Exception("Error: Missing image_annotations.json. "
                         "Please run the export_2d_annotations_as_json.py script.")
@@ -397,11 +397,11 @@ def main(version: str,
 if __name__ == "__main__":
     # Construct the argument parser and parse the arguments.
     ap = argparse.ArgumentParser()
-    ap.add_argument("-d", "--dataroot", type=str, default='/data/sets/nuscenes',
+    ap.add_argument("-d", "--dataroot", type=str, default='/media/14TBDISK/nuscenes',
                     help="The path to the root directory where the data is stored")
     ap.add_argument("-v", "--version", type=str, default='v1.0-trainval',
                     help="The nuScenes data version")
-    ap.add_argument("-o", "--output", type=str, default="videos",
+    ap.add_argument("-o", "--output", type=str, default="/home/sandra/PROGRAMAS/DBU_Graph/NuScenes/videos",
                     help="The output video directory")
     ap.add_argument("-x", "--codec", type=str, default='MJPG',
                     help="Which codec to use to generate the video, e.g. MJPG or vp09. ")
@@ -411,14 +411,17 @@ if __name__ == "__main__":
                     help="The minimum number of frames an instance must have")
     ap.add_argument("-p", "--minimum_bb_area", type=float, default=0.01,
                     help="The minimum fraction of a frame a bounding box take up to be used (0, 1)")
-    ap.add_argument("--visibility", type=str, default='2',
+    ap.add_argument("--visibility", type=str, default='',
                     help="The minimum visibility a frame is allowed to have ('', '1', '2', '3', '4')")
     ap.add_argument("-s", "--size", type=int, default=(112, 112), nargs=2,
                     help="Size of the output video")
 
     # Excludes bicycle and motorcycle by default.
     vehicle_categories = ['vehicle.bus.bendy', 'vehicle.bus.rigid',
-                          'vehicle.car', 'vehicle.construction', 'vehicle.trailer', 'vehicle.truck']
+                          'vehicle.car', 'vehicle.construction', 'vehicle.trailer', 'vehicle.truck',
+                          'vehicle.motorcycle', 'vehicle.emergency.police', 'vehicle.emergency.ambulance',
+                          'vehicle.bicycle', 'human.pedestrian.adult', 'human.pedestrian.child', 'human.pedestrian.police_officer',
+                          'human.pedestrian.construction_worker','human.pedestrian.personal_mobility' ]
     ap.add_argument("-c", "--categories", nargs='+',
                     help="The categories to extract videos for", required=False, default=vehicle_categories)
 
