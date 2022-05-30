@@ -576,32 +576,42 @@ class NuScenesMap:
 
         return arcline_path
 
-    def get_closest_lane(self, x: float, y: float, radius: float = 5) -> str:
+    def get_closest_lane(self, x: float, y: float, agent_yaw, radius: float = 5, discrete_points: dict = None) -> str:
         """
         Get closest lane id within a radius of query point. The distance from a point (x, y) to a lane is
         the minimum l2 distance from (x, y) to a point on the lane.
         :param x: X coordinate in global coordinate frame.
         :param y: Y Coordinate in global coordinate frame.
         :param radius: Radius around point to consider.
+        :param agent_dir: direction of the agent as a vector to compare with direction of the lane.
         :return: Lane id of closest lane within radius.
         """
+        if discrete_points == None:
+            lanes = self.get_records_in_radius(x, y, radius, ['lane', 'lane_connector'])
+            lanes = lanes['lane'] + lanes['lane_connector']
 
-        lanes = self.get_records_in_radius(x, y, radius, ['lane', 'lane_connector'])
-        lanes = lanes['lane'] + lanes['lane_connector']
-
-        discrete_points = self.discretize_lanes(lanes, 0.5)
-
-        current_min = torch.as_tensor(math.inf)
+            discrete_points = self.discretize_lanes(lanes, 0.5)
+            
+        current_min = 10e5
 
         min_id = ""
+        candidates = []
         for lane_id, points in discrete_points.items():
-
-            distance = np.linalg.norm(np.array(points)[:, :2] - [x, y], axis=1).min()
-            if distance <= current_min:
+            distances = np.array(points)[:, :2] - [x, y]
+            min_dist_point_id = np.linalg.norm(distances, axis=1).argmin()
+            distance = np.linalg.norm(distances[min_dist_point_id])
+            # Check if angle between agent direction and lane direction is less than 45 degrees
+            lane_dir = np.array(points)[min_dist_point_id, 2]    
+            dif_angle = agent_yaw - lane_dir
+            if dif_angle < np.pi/4 and distance <= 5:
+                candidates.append(lane_id)
+            elif dif_angle < np.pi/4 and distance <= current_min:
                 current_min = distance
                 min_id = lane_id
 
-        return min_id
+        # current lane in first position
+        candidates.insert(0, min_id) 
+        return candidates
 
     def render_next_roads(self,
                           x: float,

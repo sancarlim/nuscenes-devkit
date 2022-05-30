@@ -218,25 +218,25 @@ def length_of_lane(lane: List[ArcLinePath]) -> float:
     return sum(sum(path['segment_length']) for path in lane)
 
 
-def project_pose_to_lane(pose: Pose, lane: List[ArcLinePath], resolution_meters: float = 0.5) -> Tuple[Pose, float]:
+def project_pose_to_lane(pose: Pose, lane: List, resolution_meters: float = 0.5) -> Tuple[Pose, float]:
     """
     Find the closest pose on a lane to a query pose and additionally return the
     distance along the lane for this pose. Note that this function does
     not take the heading of the query pose into account.
     :param pose: Query pose.
-    :param lane: Will find the closest pose on this lane.
+    :param lane: Will find the closest pose on this lane. Lit[ArcLinePath]
     :param resolution_meters: How finely to discretize the lane.
     :return: Tuple of the closest pose and the distance along the lane
     """
 
-    discretized_lane = discretize_lane(lane, resolution_meters=resolution_meters)
+    ##discretize_lane(lane, resolution_meters=resolution_meters)
 
-    xy_points = np.array(discretized_lane)[:, :2]
-    closest_pose_index = np.linalg.norm(xy_points - pose[:2], axis=1).argmin()
+    xy_points = np.array(lane)[:, :2]
+    closest_pose_index = np.linalg.norm(xy_points - pose[:2], axis=1).argmin() ##discretize_lane
 
-    closest_pose = discretized_lane[closest_pose_index]
-    distance_along_lane = closest_pose_index * 0.5
-    return closest_pose, distance_along_lane
+    closest_pose = lane[closest_pose_index] ##discretized_lane
+    ##distance_along_lane = closest_pose_index * 0.5
+    return closest_pose #, distance_along_lane
 
 
 def _find_index(distance_along_lane: float, lengths: List[float]) -> int:

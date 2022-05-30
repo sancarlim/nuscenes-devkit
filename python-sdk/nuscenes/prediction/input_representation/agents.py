@@ -45,7 +45,8 @@ def pixels_to_box_corners(row_pixel: int,
 def get_track_box(annotation: Dict[str, Any],
                   center_coordinates: Tuple[float, float],
                   center_pixels: Tuple[float, float],
-                  resolution: float = 0.1) -> np.ndarray:
+                  resolution: float = 0.1,
+                  ego: bool = False) -> np.ndarray:
     """
     Get four corners of bounding box for agent in pixels.
     :param annotation: The annotation record of the agent.
@@ -58,8 +59,12 @@ def get_track_box(annotation: Dict[str, Any],
 
     assert resolution > 0
 
-    location = annotation['translation'][:2]
-    yaw_in_radians = quaternion_yaw(Quaternion(annotation['rotation']))
+    if ego:
+        location = annotation[:2]
+        yaw_in_radians = quaternion_yaw(Quaternion(annotation[-1]))
+    else:
+        location = annotation['translation'][:2]
+        yaw_in_radians = quaternion_yaw(Quaternion(annotation['rotation']))
 
     row_pixel, column_pixel = convert_to_pixel_coords(location,
                                                       center_coordinates,
@@ -168,7 +173,8 @@ def draw_agent_boxes(center_agent_annotation: Dict[str, Any],
                      base_image: np.ndarray,
                      poserecord: Dict[str, Any],
                      get_color: Callable[[str], Tuple[int, int, int]],
-                     resolution: float = 0.1) -> None:
+                     resolution: float = 0.1,
+                     ego: bool = False) -> None:
     """
     Draws past sequence of agent boxes on the image.
     :param center_agent_annotation: Annotation record for the agent
@@ -204,9 +210,16 @@ def draw_agent_boxes(center_agent_annotation: Dict[str, Any],
             cv2.fillPoly(base_image, pts=[np.int0(box)], color=color)
     
     # Ego agent never in agent_history
+    for i in range(4):
+        history_t = 'history_' + str(i)
+        box = get_track_box(poserecord[history_t], (agent_x, agent_y), center_agent_pixels, resolution, ego=True)
+        color = (255, 0, 0) if ego else (204,153,255)
+        color = fade_color(color, i, 4)
+        cv2.fillPoly(base_image, pts=[np.int0(box)], color=color)
+
     box = get_track_box(poserecord, (agent_x, agent_y), center_agent_pixels, resolution)
     
-    cv2.fillPoly(base_image, pts=[np.int0(box)], color=(204,153,255)) #LILA
+    cv2.fillPoly(base_image, pts=[np.int0(box)], color=color) #LILA
 
 
 class AgentBoxesWithFadedHistory(AgentRepresentation):
@@ -221,7 +234,7 @@ class AgentBoxesWithFadedHistory(AgentRepresentation):
                  resolution: float = 0.1,  # meters / pixel
                  meters_ahead: float = 40, meters_behind: float = 10,
                  meters_left: float = 25, meters_right: float = 25,
-                 color_mapping: Callable[[str], Tuple[int, int, int]] = None):
+                 color_mapping: Callable[[str], Tuple[int, int, int],] = None):
 
         self.helper = helper
         self.seconds_of_history = seconds_of_history
@@ -237,12 +250,13 @@ class AgentBoxesWithFadedHistory(AgentRepresentation):
         self.meters_left = meters_left
         self.meters_right = meters_right
 
+
         if not color_mapping:
             color_mapping = default_colors
 
         self.color_mapping = color_mapping
 
-    def make_representation(self, instance_token: str, sample_token: str, poserecord: Dict[str, Any], ego: bool) -> np.ndarray:
+    def make_representation(self, instance_token: str, sample_token: str, poserecord: Dict[str, Any], ego:bool = False) -> np.ndarray:
         """
         Draws agent boxes with faded history into a black background.
         :param instance_token: Instance token.
@@ -267,8 +281,6 @@ class AgentBoxesWithFadedHistory(AgentRepresentation):
                                                   just_xy=False)
         history = reverse_history(history)
 
-        #TODO: self.helper.get_future_for_sample. Además aquí consigues todos los agentes de la sample
-        #TODO: pintar predictions
 
         present_time = self.helper.get_annotations_for_sample(sample_token)
 
@@ -280,7 +292,7 @@ class AgentBoxesWithFadedHistory(AgentRepresentation):
             center_agent_annotation = self.helper.get_sample_annotation(instance_token, sample_token)
 
         draw_agent_boxes(center_agent_annotation, central_track_pixels,
-                         history, base_image, poserecord, resolution=self.resolution, get_color=self.color_mapping) 
+                         history, base_image, poserecord, resolution=self.resolution, get_color=self.color_mapping, ego=ego) 
 
         center_agent_yaw = quaternion_yaw(Quaternion(center_agent_annotation['rotation']))
         rotation_mat = get_rotation_matrix(base_image.shape, center_agent_yaw)

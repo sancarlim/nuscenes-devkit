@@ -9,7 +9,7 @@ import numpy as np
 from pyquaternion import Quaternion
 
 from nuscenes.eval.common.utils import quaternion_yaw
-from nuscenes.map_expansion.map_api import NuScenesMap, locations
+from nuscenes.map_expansion.map_api import NuScenesMap, NuScenesMapExplorer, locations 
 from nuscenes.prediction import PredictHelper
 from nuscenes.prediction.helper import angle_of_rotation, angle_diff
 from nuscenes.prediction.input_representation.combinators import Rasterizer
@@ -18,7 +18,6 @@ from nuscenes.prediction.input_representation.interface import \
 from nuscenes.prediction.input_representation.utils import get_crops, get_rotation_matrix, convert_to_pixel_coords
 
 Color = Tuple[float, float, float]
-
 
 def load_all_maps(helper: PredictHelper, verbose: bool = False) -> Dict[str, NuScenesMap]:
     """
@@ -106,6 +105,46 @@ def get_lanes_in_radius(x: float, y: float, radius: float,
 
     return lanes
 
+def get_lanes_for_agent(x: float, y: float, 
+                        map_api: NuScenesMap, yaw) -> Dict[str, List[Tuple[float, float, float]]]:
+    """
+    Retrieves all the lanes and lane connectors in a radius of the query point.
+    :param x: x-coordinate of point in global coordinates.
+    :param y: y-coordinate of point in global coordinates.
+    :param radius: Any lanes within radius meters of the (x, y) point will be returned.
+    :param discretization_meters: How finely to discretize the lane. If 1 is given, for example,
+        the lane will be discretized into a list of points such that the distances between points
+        is approximately 1 meter.
+    :param map_api: The NuScenesMap instance to query.
+    :param agent_past: The past of the agent to compare direction of the lane.
+    :return: Mapping from lane id to list of coordinate tuples in global coordinate system.
+    """
+    no_lane = False
+    # Get candidate lanes
+    lanes = map_api.get_closest_lane(x, y, yaw)
+    # [N lanes, [n outgoing lanes per candidate lane]]
+    candidates_paths = {}
+    if lanes[0] != '':
+        for lane in lanes:
+            candidates_paths[lane] = map_api.get_outgoing_lane_ids(lane)
+            # outgoing_lanes.append(   map_api.discretize_lanes(  map_api.get_outgoing_lane_ids(lane), resolution_meters=0.5  )     )
+        # lanes = map_api.discretize_lanes(lanes, resolution_meters=0.5)
+    else:
+        no_lane = True
+        print('No Lane in radius 5 ')
+        
+    """ try:
+        next_road_segment_list, next_road_block_list,next_road_lane_list = map_api.get_next_roads(x,y).values()
+        if len(next_road_segment_list) != 0 and map_api.get('road_segment',next_road_segment_list[0])['is_intersection']:
+            lanes.append(map_api.layers_on_point(x, y)['lane'])
+            lanes.extend(map_api.get_outgoing_lane_ids(lanes[-1]))
+            #map_api.layers_on_point(x, y)['stop_line']  #nusc_map.get('stop_line',token)[stop_line_type]
+    except:
+        print('No next roads') 
+    lanes = set(lanes)       
+    """
+
+    return candidates_paths, no_lane
 
 def color_by_yaw(agent_yaw_in_radians: float,
                  lane_yaw_in_radians: float) -> Color:
@@ -207,7 +246,7 @@ def draw_lanes_in_agent_frame(image_side_length: int,
 
     rotated_image = cv2.warpAffine(image_with_lanes, rotation_mat, image_with_lanes.shape[:2])
 
-    return rotated_image.astype("uint8"), lanes
+    return rotated_image.astype("uint8")
 
 
 class StaticLayerRasterizer(StaticLayerRepresentation):
@@ -296,35 +335,40 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
 
     def get_lanes_per_agent(self, instance_token: str, sample_token: str, poserecord: Dict[str, Any], ego: bool) ->  Dict[str, List[Tuple[float, float, float]]]:
         """
-        Get lanes in a radius of 50m around agent in global frame.
+        Get lanes in a radius of 2m around agent, with a differnce in orientation of max 90 degrees between both.
+        Then get the connected ones.
         :param instance_token: Token for instance.
         :param sample_token: Token for sample.
         :return: Mapping from lane id to list of coordinate tuples in global coordinate system. .
         """
-        map_name = self.helper.get_map_name_from_sample_token(sample_token)
+        map_name = self.helper.get_map_name_from_sample_token(sample_token) 
 
         if ego:
             sample_annotation = poserecord
         else:
             sample_annotation = self.helper.get_sample_annotation(instance_token, sample_token)
-    
-        x, y = sample_annotation['translation'][:2]
+            x, y = sample_annotation['translation'][:2]
         
-        #yaw = quaternion_yaw(Quaternion(sample_annotation['rotation']))
+        yaw = quaternion_yaw(Quaternion(sample_annotation['rotation']))
 
-        #yaw_corrected = correct_yaw(yaw)
+        yaw_corrected = correct_yaw(yaw) # np.arctan2(agent_dir[1],agent_dir[0])
+        """ 
+        image_side_length = 2 * max(self.meters_ahead, self.meters_behind,
+                                    self.meters_left, self.meters_right)
 
-        #image_side_length = 2 * max(self.meters_ahead, self.meters_behind,
-        #                            self.meters_left, self.meters_right)
+        patchbox = get_patchbox(x, y, image_side_length) 
+        angle_in_degrees = angle_of_rotation(yaw_corrected) * 180 / np.pi
 
-        #patchbox = get_patchbox(x, y, image_side_length) 
-        #angle_in_degrees = angle_of_rotation(yaw_corrected) * 180 / np.pi
-
-        #patch = map_api.explorer.get_patch_coord(patchbox, angle_in_degrees)
-        #lanes = map_api.explorer.get_records_in_patch(patch.bounds, ['lane', 'lane_connector'])
+        patch = NuScenesMapExplorer.get_patch_coord(patchbox, angle_in_degrees)
+        lanes = nu_map.get_records_in_patch(patch.bounds, ['lane', 'lane_connector'])
         
-        #lanes = lanes['lane'] + lanes['lane_connector']
-        #lanes = map_api.discretize_lanes(lanes, resolution_meters=1)
-        lanes = get_lanes_in_radius(x, y, radius=50, discretization_meters=1, map_api=self.maps[map_name])
-
-        return lanes
+        lanes = lanes['lane'] + lanes['lane_connector']
+        lanes = nu_map.discretize_lanes(lanes, resolution_meters=1)
+        """
+        #lanes = get_lanes_in_radius(x, y, radius=1.5, discretization_meters=1, map_api=self.maps[map_name]) 
+        candidates_paths, no_lane = get_lanes_for_agent(x,y,self.maps[map_name], yaw)
+        # with numap we can check if its stop, intersection, etc and add it to the vector representation of the lane (not only x, y, yaw)
+        if no_lane:
+            print(f'Instance {instance_token} of sample {sample_token} has no lane.')
+            
+        return candidates_paths
