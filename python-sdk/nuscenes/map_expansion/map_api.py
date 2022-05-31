@@ -603,15 +603,17 @@ class NuScenesMap:
             # Check if angle between agent direction and lane direction is less than 45 degrees
             lane_dir = np.array(points)[min_dist_point_id, 2]    
             dif_angle = agent_yaw - lane_dir
-            if dif_angle < np.pi/4 and distance <= 5:
+            if abs(dif_angle) < np.pi/4 and distance <= 5:
                 candidates.append(lane_id)
                 if distance <= current_min:
                     current_min = distance
                     min_id = lane_id
 
         # current lane in first position
-        candidates.insert(0, min_id) 
-        return list(set(candidates))
+        if min_id in candidates:
+            candidates.remove(min_id)
+            candidates.insert(0, min_id) 
+        return candidates
 
     def render_next_roads(self,
                           x: float,
