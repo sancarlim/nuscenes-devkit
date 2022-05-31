@@ -605,13 +605,13 @@ class NuScenesMap:
             dif_angle = agent_yaw - lane_dir
             if dif_angle < np.pi/4 and distance <= 5:
                 candidates.append(lane_id)
-            elif dif_angle < np.pi/4 and distance <= current_min:
-                current_min = distance
-                min_id = lane_id
+                if distance <= current_min:
+                    current_min = distance
+                    min_id = lane_id
 
         # current lane in first position
         candidates.insert(0, min_id) 
-        return candidates
+        return list(set(candidates))
 
     def render_next_roads(self,
                           x: float,

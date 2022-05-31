@@ -347,7 +347,8 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
             sample_annotation = poserecord
         else:
             sample_annotation = self.helper.get_sample_annotation(instance_token, sample_token)
-            x, y = sample_annotation['translation'][:2]
+        
+        x, y = sample_annotation['translation'][:2]
         
         yaw = quaternion_yaw(Quaternion(sample_annotation['rotation']))
 
