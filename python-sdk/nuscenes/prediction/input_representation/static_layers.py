@@ -124,7 +124,7 @@ def get_lanes_for_agent(x: float, y: float,
     lanes = map_api.get_closest_lane(x, y, yaw)
     # [N lanes, [n outgoing lanes per candidate lane]]
     candidates_paths = {}
-    if lanes[0] != '':
+    if len(lanes) != 0:
         for lane in lanes:
             candidates_paths[lane] = map_api.get_outgoing_lane_ids(lane)
             # outgoing_lanes.append(   map_api.discretize_lanes(  map_api.get_outgoing_lane_ids(lane), resolution_meters=0.5  )     )
