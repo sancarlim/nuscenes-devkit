@@ -589,6 +589,9 @@ class NuScenesMap:
         if discrete_points == None:
             lanes = self.get_records_in_radius(x, y, radius, ['lane', 'lane_connector'])
             lanes = lanes['lane'] + lanes['lane_connector']
+            if len(lanes) == 0:
+                lanes = self.get_records_in_radius(x, y, 10, ['lane', 'lane_connector'])
+                lanes = lanes['lane'] + lanes['lane_connector']
 
             discrete_points = self.discretize_lanes(lanes, 0.5)
             
@@ -596,24 +599,33 @@ class NuScenesMap:
 
         min_id = ""
         candidates = []
+        distances_list = []
         for lane_id, points in discrete_points.items():
             distances = np.array(points)[:, :2] - [x, y]
             min_dist_point_id = np.linalg.norm(distances, axis=1).argmin()
             distance = np.linalg.norm(distances[min_dist_point_id])
+            distances_list.append(distance)
             # Check if angle between agent direction and lane direction is less than 45 degrees
             lane_dir = np.array(points)[min_dist_point_id, 2]    
-            dif_angle = agent_yaw - lane_dir
-            if abs(dif_angle) < np.pi/4 and distance <= 5:
+            dif_angle = agent_yaw - lane_dir 
+            if abs(dif_angle) < np.pi/4:
                 candidates.append(lane_id)
                 if distance <= current_min:
                     current_min = distance
                     min_id = lane_id
-
+        
         # current lane in first position
         if min_id in candidates:
             candidates.remove(min_id)
             candidates.insert(0, min_id) 
-        return candidates
+
+        if len(candidates)==0 and len(distances_list) != 0:
+            lane_id, _ = list(discrete_points.items())[distances_list.index(min(distances_list))]
+            candidates = [lane_id]
+            print(f'No lane, min distance: {min(distances_list)}')
+            return candidates, True
+        
+        return candidates, False
 
     def render_next_roads(self,
                           x: float,

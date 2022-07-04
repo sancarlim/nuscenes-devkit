@@ -121,7 +121,7 @@ def get_lanes_for_agent(x: float, y: float,
     """
     no_lane = False
     # Get candidate lanes
-    lanes = map_api.get_closest_lane(x, y, yaw)
+    lanes, no_lane = map_api.get_closest_lane(x, y, yaw)
     # [N lanes, [n outgoing lanes per candidate lane]]
     candidates_paths = {}
     if len(lanes) != 0:
@@ -131,7 +131,7 @@ def get_lanes_for_agent(x: float, y: float,
         # lanes = map_api.discretize_lanes(lanes, resolution_meters=0.5)
     else:
         no_lane = True
-        print('No Lane in radius 5 ')
+        print('No Lane in radius 10 ')
         
     """ try:
         next_road_segment_list, next_road_block_list,next_road_lane_list = map_api.get_next_roads(x,y).values()
@@ -345,7 +345,7 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
 
         if ego:
             sample_annotation = poserecord
-        else:
+        else: 
             sample_annotation = self.helper.get_sample_annotation(instance_token, sample_token)
         
         x, y = sample_annotation['translation'][:2]

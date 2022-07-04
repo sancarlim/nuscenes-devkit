@@ -229,14 +229,14 @@ def project_pose_to_lane(pose: Pose, lane: List, resolution_meters: float = 0.5)
     :return: Tuple of the closest pose and the distance along the lane
     """
 
-    ##discretize_lane(lane, resolution_meters=resolution_meters)
+    discretized_lane = discretize_lane(lane, resolution_meters=resolution_meters)
 
-    xy_points = np.array(lane)[:, :2]
-    closest_pose_index = np.linalg.norm(xy_points - pose[:2], axis=1).argmin() ##discretize_lane
+    xy_points = np.array(discretized_lane)[:, :2]
+    closest_pose_index = np.linalg.norm(xy_points - pose[:2], axis=1).argmin()
 
-    closest_pose = lane[closest_pose_index] ##discretized_lane
-    ##distance_along_lane = closest_pose_index * 0.5
-    return closest_pose #, distance_along_lane
+    closest_pose = discretized_lane[closest_pose_index]
+    distance_along_lane = closest_pose_index * resolution_meters
+    return closest_pose, 
 
 
 def _find_index(distance_along_lane: float, lengths: List[float]) -> int:
