@@ -324,10 +324,7 @@ class PredictHelper:
         annotation = self.get_sample_annotation(instance_token, sample_token)
 
         if annotation['prev'] == '':
-            if with_function == heading_change_rate:
-                return np.nan
-            else:
-                return np.array([np.nan, np.nan])
+            return np.nan
 
         prev = self.data.get('sample_annotation', annotation['prev'])
 
@@ -340,10 +337,11 @@ class PredictHelper:
             return with_function(annotation, prev, time_diff, **kwargs)
 
         else:
-            if with_function == heading_change_rate:
+            return np.nan
+            """ if with_function == heading_change_rate:
                 return np.nan
             else:
-                return np.array([np.nan, np.nan])
+                return np.array([np.nan, np.nan]) """
 
     def get_velocity_for_agent(self, instance_token: str, sample_token: str, max_time_diff: float = 1.5) -> float:
         """
@@ -398,7 +396,7 @@ def velocity(current: Dict[str, Any], prev: Dict[str, Any], time_diff: float) ->
     :param time_diff: How much time has elapsed between the records.
     """
     diff = (np.array(current['translation']) - np.array(prev['translation'])) / time_diff
-    return diff[:2] #np.linalg.norm(diff[:2])
+    return np.linalg.norm(diff[:2])
 
 
 def heading_change_rate(current: Dict[str, Any], prev: Dict[str, Any], time_diff: float) -> float:

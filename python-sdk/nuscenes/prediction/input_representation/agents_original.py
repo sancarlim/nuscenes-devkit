@@ -1,6 +1,5 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
-# Modifided by: Sandra Carrasco, 2022.
 import colorsys
 from typing import Any, Dict, List, Tuple, Callable
 
@@ -10,7 +9,7 @@ from pyquaternion import Quaternion
 
 from nuscenes.prediction import PredictHelper
 from nuscenes.prediction.helper import quaternion_yaw
-from nuscenes.prediction.input_representation.interface import AgentRepresentation
+from nuscenes.prediction.input_representation.interface_original import AgentRepresentation
 from nuscenes.prediction.input_representation.utils import convert_to_pixel_coords, get_crops, get_rotation_matrix
 
 History = Dict[str, List[Dict[str, Any]]]
@@ -46,8 +45,7 @@ def pixels_to_box_corners(row_pixel: int,
 def get_track_box(annotation: Dict[str, Any],
                   center_coordinates: Tuple[float, float],
                   center_pixels: Tuple[float, float],
-                  resolution: float = 0.1,
-                  ego: bool = False) -> np.ndarray:
+                  resolution: float = 0.1) -> np.ndarray:
     """
     Get four corners of bounding box for agent in pixels.
     :param annotation: The annotation record of the agent.
@@ -60,23 +58,15 @@ def get_track_box(annotation: Dict[str, Any],
 
     assert resolution > 0
 
-    if ego:
-        location = annotation[:2]
-        yaw_in_radians = quaternion_yaw(Quaternion(annotation[-1]))
-    else:
-        location = annotation['translation'][:2]
-        yaw_in_radians = quaternion_yaw(Quaternion(annotation['rotation']))
+    location = annotation['translation'][:2]
+    yaw_in_radians = quaternion_yaw(Quaternion(annotation['rotation']))
 
     row_pixel, column_pixel = convert_to_pixel_coords(location,
                                                       center_coordinates,
                                                       center_pixels, resolution)
-    try:
-        width = annotation['size'][0] / resolution
-        length = annotation['size'][1] / resolution
-    except:
-        # Ego_vehicle size
-        width = 2.5 / resolution
-        length = 5 / resolution
+
+    width = annotation['size'][0] / resolution
+    length = annotation['size'][1] / resolution
 
     # Width and length are switched here so that we can draw them along the x-axis as
     # opposed to the y. This makes rotation easier.
@@ -154,11 +144,8 @@ def default_colors(category_name: str) -> Tuple[int, int, int]:
     :param category_name: Name of object category for the annotation.
     :return: Tuple representing rgb color.
     """
-    if 'motorcycle' in category_name:
-        return 0, 255, 255  # cian
-    elif 'bicycle' in category_name:
-        return 0, 255, 0    # green
-    elif 'vehicle' in category_name:
+
+    if 'vehicle' in category_name:
         return 255, 255, 0  # yellow
     elif 'object' in category_name:
         return 204, 0, 204  # violet
@@ -172,10 +159,8 @@ def draw_agent_boxes(center_agent_annotation: Dict[str, Any],
                      center_agent_pixels: Tuple[float, float],
                      agent_history: History,
                      base_image: np.ndarray,
-                     poserecord: Dict[str, Any],
                      get_color: Callable[[str], Tuple[int, int, int]],
-                     resolution: float = 0.1,
-                     ego: bool = False) -> None:
+                     resolution: float = 0.1) -> None:
     """
     Draws past sequence of agent boxes on the image.
     :param center_agent_annotation: Annotation record for the agent
@@ -209,18 +194,6 @@ def draw_agent_boxes(center_agent_annotation: Dict[str, Any],
                 color = fade_color(color, i, num_points - 1)
 
             cv2.fillPoly(base_image, pts=[np.int0(box)], color=color)
-    
-    # Ego agent never in agent_history
-    for i in range(4):
-        history_t = 'history_' + str(i)
-        box = get_track_box(poserecord[history_t], (agent_x, agent_y), center_agent_pixels, resolution, ego=True)
-        color = (255, 0, 0) if ego else (204,153,255)
-        color = fade_color(color, i, 4)
-        cv2.fillPoly(base_image, pts=[np.int0(box)], color=color)
-
-    box = get_track_box(poserecord, (agent_x, agent_y), center_agent_pixels, resolution)
-    
-    cv2.fillPoly(base_image, pts=[np.int0(box)], color=color) #LILA
 
 
 class AgentBoxesWithFadedHistory(AgentRepresentation):
@@ -235,7 +208,7 @@ class AgentBoxesWithFadedHistory(AgentRepresentation):
                  resolution: float = 0.1,  # meters / pixel
                  meters_ahead: float = 40, meters_behind: float = 10,
                  meters_left: float = 25, meters_right: float = 25,
-                 color_mapping: Callable[[str], Tuple[int, int, int],] = None):
+                 color_mapping: Callable[[str], Tuple[int, int, int]] = None):
 
         self.helper = helper
         self.seconds_of_history = seconds_of_history
@@ -251,13 +224,12 @@ class AgentBoxesWithFadedHistory(AgentRepresentation):
         self.meters_left = meters_left
         self.meters_right = meters_right
 
-
         if not color_mapping:
             color_mapping = default_colors
 
         self.color_mapping = color_mapping
 
-    def make_representation(self, instance_token: str, sample_token: str, poserecord: Dict[str, Any], ego:bool = False) -> np.ndarray:
+    def make_representation(self, instance_token: str, sample_token: str) -> np.ndarray:
         """
         Draws agent boxes with faded history into a black background.
         :param instance_token: Instance token.
@@ -282,18 +254,14 @@ class AgentBoxesWithFadedHistory(AgentRepresentation):
                                                   just_xy=False)
         history = reverse_history(history)
 
-
         present_time = self.helper.get_annotations_for_sample(sample_token)
 
         history = add_present_time_to_history(present_time, history)
 
-        if ego:
-            center_agent_annotation = poserecord
-        else:
-            center_agent_annotation = self.helper.get_sample_annotation(instance_token, sample_token)
+        center_agent_annotation = self.helper.get_sample_annotation(instance_token, sample_token)
 
         draw_agent_boxes(center_agent_annotation, central_track_pixels,
-                         history, base_image, poserecord, resolution=self.resolution, get_color=self.color_mapping, ego=ego) 
+                         history, base_image, resolution=self.resolution, get_color=self.color_mapping)
 
         center_agent_yaw = quaternion_yaw(Quaternion(center_agent_annotation['rotation']))
         rotation_mat = get_rotation_matrix(base_image.shape, center_agent_yaw)
