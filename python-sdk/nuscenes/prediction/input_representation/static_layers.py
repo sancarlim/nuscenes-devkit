@@ -106,8 +106,8 @@ def get_lanes_in_radius(x: float, y: float, radius: float,
 
     return lanes
 
-def get_lanes_for_agent(x: float, y: float, 
-                        map_api: NuScenesMap, yaw) -> Dict[str, List[Tuple[float, float, float]]]:
+def get_lanes_for_agent(x: float, y: float, yaw: float, 
+                        map_api: NuScenesMap) -> Dict[str, List[Tuple[float, float, float]]]:
     """
     Retrieves all the lanes and lane connectors in a radius of the query point.
     :param x: x-coordinate of point in global coordinates.
@@ -132,7 +132,7 @@ def get_lanes_for_agent(x: float, y: float,
         # lanes = map_api.discretize_lanes(lanes, resolution_meters=0.5)
     else:
         no_lane = True
-        print('No Lane in radius 10 ')
+        # print('No Lane in radius 10 ')
         
     """ try:
         next_road_segment_list, next_road_block_list,next_road_lane_list = map_api.get_next_roads(x,y).values()
@@ -368,7 +368,7 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
         lanes = nu_map.discretize_lanes(lanes, resolution_meters=1)
         """
         #lanes = get_lanes_in_radius(x, y, radius=1.5, discretization_meters=1, map_api=self.maps[map_name]) 
-        candidates_paths, no_lane = get_lanes_for_agent(x,y,self.maps[map_name], yaw)
+        candidates_paths, no_lane = get_lanes_for_agent(x,y, yaw, self.maps[map_name],)
         # with numap we can check if its stop, intersection, etc and add it to the vector representation of the lane (not only x, y, yaw)
         if no_lane:
             print(f'Instance {instance_token} of sample {sample_token} has no lane.')
