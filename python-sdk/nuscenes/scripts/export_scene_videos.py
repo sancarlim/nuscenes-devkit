@@ -8,8 +8,7 @@ Exports a video of each scene (with annotations) to disk.
 import argparse
 import os
 
-from nuscenes import NuScenes
-
+from nuscenes import NuScenes 
 
 def export_videos(nusc: NuScenes, out_dir: str):
     """ Export videos of the images displayed in the images. """
@@ -24,6 +23,8 @@ def export_videos(nusc: NuScenes, out_dir: str):
     # Write videos to disk
     for scene_token in scene_tokens:
         scene = nusc.get('scene', scene_token)
+        if scene['name'].split('-')[-1] not in ['0109']: #,'0100','0101','0014','0104','0190','0553','0277','0556','0275','0095','0524']:
+            continue
         print('Writing scene %s' % scene['name'])
         out_path = os.path.join(out_dir, scene['name']) + '.avi'
         if not os.path.exists(out_path):
@@ -36,7 +37,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Export all videos of annotations.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--out_dir', type=str, help='Directory where to save videos.', default='videos')
-    parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
+    parser.add_argument('--dataroot', type=str, default='/media/14TBDISK/nuscenes/',
                         help='Default nuScenes data directory.')
     parser.add_argument('--version', type=str, default='v1.0-trainval',
                         help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0-trainval.')

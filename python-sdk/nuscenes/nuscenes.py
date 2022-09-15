@@ -1470,8 +1470,8 @@ class NuScenesExplorer:
         time_step = 1 / freq * 1e6  # Time-stamps are measured in micro-seconds.
 
         window_name = '{}'.format(scene_rec['name'])
-        cv2.namedWindow(window_name)
-        cv2.moveWindow(window_name, 0, 0)
+        #cv2.namedWindow(window_name)
+        #cv2.moveWindow(window_name, 0, 0)
 
         canvas = np.ones((2 * imsize[1], 3 * imsize[0], 3), np.uint8)
         if out_path is not None:
@@ -1529,11 +1529,11 @@ class NuScenesExplorer:
                     prev_recs[channel] = sd_rec  # Store here so we don't render the same image twice.
 
             # Show updated canvas.
-            cv2.imshow(window_name, canvas)
+            #cv2.imshow(window_name, canvas)
             if out_path is not None:
                 out.write(canvas)
 
-            key = cv2.waitKey(1)  # Wait a very short time (1 ms).
+            """ key = cv2.waitKey(1)  # Wait a very short time (1 ms).
 
             if key == 32:  # if space is pressed, pause.
                 key = cv2.waitKey()
@@ -1542,7 +1542,7 @@ class NuScenesExplorer:
                 cv2.destroyAllWindows()
                 break
 
-        cv2.destroyAllWindows()
+        cv2.destroyAllWindows() """
         if out_path is not None:
             out.release()
 

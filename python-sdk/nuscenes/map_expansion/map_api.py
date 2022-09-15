@@ -622,7 +622,7 @@ class NuScenesMap:
         if len(candidates)==0 and len(distances_list) != 0:
             lane_id, _ = list(discrete_points.items())[distances_list.index(min(distances_list))]
             candidates = [lane_id]
-            print(f'No lane, min distance: {min(distances_list)}')
+            # print(f'No lane, min distance: {min(distances_list)}')
             return candidates, True
         
         return candidates, False
@@ -710,8 +710,8 @@ class NuScenesMapExplorer:
         # Mutable default argument.
         if color_map is None:
             color_map = dict(drivable_area='#a6cee3',
-                             road_segment='#1f78b4',
-                             road_block='#b2df8a',
+                             road_segment='#33a02c', #1f78b4
+                             road_block='#33a02c', #b2df8a
                              lane='#33a02c',
                              ped_crossing='#fb9a99',
                              walkway='#e31a1c',
@@ -1760,7 +1760,7 @@ class NuScenesMapExplorer:
                     label = None
 
                 ax.add_patch(descartes.PolygonPatch(polygon, fc=self.color_map[layer_name], alpha=alpha,
-                                                    label=label))
+                                                    label=label,edgecolor=self.color_map[layer_name])) 
 
     def _render_line_layer(self, ax: Axes, layer_name: str, alpha: float, tokens: List[str] = None) -> None:
         """
