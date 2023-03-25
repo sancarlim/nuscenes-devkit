@@ -712,7 +712,7 @@ class NuScenesMapExplorer:
             color_map = dict(drivable_area='#a6cee3',
                              road_segment='#33a02c', #1f78b4
                              road_block='#33a02c', #b2df8a
-                             lane='#33a02c',
+                             lane='#a6cee3', #33a02c
                              ped_crossing='#fb9a99',
                              walkway='#e31a1c',
                              stop_line='#fdbf6f',
